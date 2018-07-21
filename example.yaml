@@ -1,0 +1,89 @@
+testcases:
+  -
+    tcid: "TC_src_Kafka_sink_Kafka"
+    description: "Source: Kafka, Sink: Kafka"
+    source:
+      type: "Kafka"
+      kafka:
+        brokers: "localhost:9092"
+        topic: "USVC.Test"
+      serialize:
+        enable: True
+        type: "Binary"
+    sink:
+      type: "Kafka"
+      kafka:
+        brokers: "localhost:9092"
+        topic: "USVC.Test"
+        group: "USVC.Clients"
+      serialize:
+        enable: True
+        type: "Binary"
+    payloads:
+      -
+        input: "101.in"
+        output: "101.out"
+      -
+        input: "102.in"
+        output: "102.out"
+  -
+    tcid: "TC_src_KafkaAvro_sink_KafkaAvro"
+    description: "Source: Kafka with Avro, Sink: Kafka with Avro"
+    source:
+      type: "Kafka"
+      kafka:
+        brokers: "localhost:9092"
+        topic: "USVC.Test"
+      serialize:
+        enable: True
+        type: "Avro"
+        avro:
+          schema: "users.avsc"
+    sink:
+      type: "Kafka"
+      kafka:
+        brokers: "localhost:9092"
+        topic: "USVC.Test"
+        group: "USVC.Clients"
+        timeout: 15
+      serialize:
+        enable: True
+        type: "Avro"
+        avro:
+          schema: "users.avsc"
+    payloads:
+      -
+        input: "101.in"
+        output: "101.out"
+      -
+        input: "102.in"
+        output: "102.out"
+  -
+    tcid: "TC_src_CFKafka_sink_CFKafka"
+    description: "Source: CFKafka, Sink: CFKafka"
+    source:
+      type: "CFKafka"
+      cfkafka:
+        brokers: "localhost:9092"
+        topic: "USVC.Test"
+        schema.registry: "http://localhost:8081"
+        schema.file: "users.avsc"
+      serialize:
+        enable: False
+    sink:
+      type: "CFKafka"
+      cfkafka:
+        brokers: "localhost:9092"
+        topic: "USVC.Test"
+        group: "USVC.Clients"
+        timeout: 15
+        schema.registry: "http://localhost:8081"
+      serialize:
+        enable: False
+    payloads:
+      -
+        input: "101.in"
+        output: "101.out"
+      -
+        input: "102.in"
+        output: "102.out"
