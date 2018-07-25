@@ -243,9 +243,8 @@ class TestConsumer(TestBaseEP):
                 poll_num += 1
                 msg = self.cons.poll(timeout=1.0)
             except SerializerError as exc:
-                raise RuntimeError("Message deserialization failed for {}: {}".format(
-                    msg, exc))
-                break
+                raise RuntimeError("Message deserialization failed: {}".format(
+                    exc))
 
             if msg is None:
                 #parts = self.cons.position(parts)

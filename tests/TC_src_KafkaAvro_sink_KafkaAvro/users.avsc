@@ -1,6 +1,6 @@
 {
    "namespace": "usvc.test",
-   "name": "value",
+   "name": "User",
    "type": "record",
    "fields": [
      {

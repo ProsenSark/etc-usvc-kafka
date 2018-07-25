@@ -163,6 +163,7 @@ def run_testcases(config):
                     logger.error("Oops! {}".format(str(exc)))
                     logger.error("The result of testcase " + log_hdr + "is => FAILED")
                     tc_drv.failed(pld_id)
+                    #raise
 
     collect_report(tc_drv)
 
