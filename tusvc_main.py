@@ -142,7 +142,7 @@ def run_testcases(config):
             out_file = os.path.join(tc_id, pld["output"])
 
             pld_id = "Sent {}, Expected {}".format(pld["input"], pld["output"])
-            log_hdr = "{}: {} ".format(tc_id, pld_id)
+            log_hdr = "<{}: {}> ".format(tc_id, pld_id)
             with open(in_file, "r") as in_fh, open(out_file, "r") as out_fh:
                 try:
                     logger.debug(log_hdr + "Tx 1 msg")

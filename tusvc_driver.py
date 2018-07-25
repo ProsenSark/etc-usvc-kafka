@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import json
-import pprint
 import logging
 
 class TestCaseDriver(object):
@@ -70,9 +69,9 @@ class TestCaseDriver(object):
             raise RuntimeError("No expected payload stored!")
         if self.rx_pld != self.exp_pld:
             logger.debug("Expected payload:\n{}".format(
-                pprint.PrettyPrinter().pformat(self.exp_pld)))
+                json.dumps(self.exp_pld, indent=2, sort_keys=True)))
             logger.debug("Received payload:\n{}".format(
-                pprint.PrettyPrinter().pformat(self.rx_pld)))
+                json.dumps(self.rx_pld, indent=2, sort_keys=True)))
             return False
 
         return True
