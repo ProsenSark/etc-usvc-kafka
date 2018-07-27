@@ -94,7 +94,9 @@ class TestProducer(TestBaseEP):
                 }
             })
         elif self.type == "CFKafka":
-            val_schema = avro.load(os.path.join(self.tc_id, self.schema_file))
+            src_file = os.path.join(self.tc_id, self.schema_file)
+            logger.debug("Loading source Avro: '{}'".format(src_file))
+            val_schema = avro.load(src_file)
 
             logger.debug("brokers: {}, schema_reg: {}, topic: {}".format(
                 self.brokers, self.schema_reg, self.topic))
@@ -228,6 +230,21 @@ class TestConsumer(TestBaseEP):
         if end > 0:
             parts[0].offset = end - 1
             self.cons.seek(parts[0])
+
+    def flush(self):
+        logger = logging.getLogger()
+
+        logger.debug("topic: {}".format(self.topic))
+        while True:
+            try:
+                msg = self.cons.poll(timeout=1.0)
+            except SerializerError as exc:
+                continue
+
+            if msg is None or not msg.error():
+                continue
+            elif msg.error().code() == KafkaError._PARTITION_EOF:
+                break
 
     def rx_one(self, exp_out):
         logger = logging.getLogger()

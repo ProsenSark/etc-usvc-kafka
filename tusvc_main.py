@@ -143,8 +143,12 @@ def run_testcases(config):
 
             pld_id = "Sent {}, Expected {}".format(pld["input"], pld["output"])
             log_hdr = "<{}: {}> ".format(tc_id, pld_id)
+            logger.debug("Loading input payload: '{}'".format(in_file))
+            logger.debug("Loading output payload: '{}'".format(out_file))
             with open(in_file, "r") as in_fh, open(out_file, "r") as out_fh:
                 try:
+                    tc_sink.flush()
+
                     logger.debug(log_hdr + "Tx 1 msg")
                     tc_src.tx_one(tc_serial.serialize(in_fh.read()))
 

@@ -10,6 +10,8 @@ import logging
 
 class TestSerializer(object):
     def __init__(self, tc_drv, cfg_src_serial, cfg_sink_serial):
+        logger = logging.getLogger()
+
         self.tc_drv = tc_drv
         self.tc_id = tc_drv.get_id()
         self.src = {}
@@ -18,11 +20,13 @@ class TestSerializer(object):
         self.__init_common(cfg_sink_serial, self.sink)
         if self.src["serialize"] and self.src["type"] == "Avro":
             src_file = os.path.join(self.tc_id, self.src["avro_schema"])
+            logger.debug("Loading source Avro: '{}'".format(src_file))
             with open(src_file, "rb") as src_fh:
                 schema = avro.schema.parse(src_fh.read())
                 self.src["avro_writer"] = avro.io.DatumWriter(schema)
         if self.sink["serialize"] and self.sink["type"] == "Avro":
             sink_file = os.path.join(self.tc_id, self.sink["avro_schema"])
+            logger.debug("Loading sink Avro: '{}'".format(sink_file))
             with open(sink_file, "rb") as sink_fh:
                 schema = avro.schema.parse(sink_fh.read())
                 self.sink["avro_reader"] = avro.io.DatumReader(schema)
