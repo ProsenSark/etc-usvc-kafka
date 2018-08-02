@@ -1,3 +1,5 @@
 avro
 confluent-kafka
+confluent-kafka[avro]
 PyYAML
+requests

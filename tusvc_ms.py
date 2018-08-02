@@ -11,7 +11,7 @@ import json
 import logging
 
 class TestBaseEP(object):
-    def __init__(self, cfg):
+    def __init__(self, tc_drv, cfg):
         if not cfg:
             raise ValueError("'cfg' is a required parameter")
         if self.type == "Kafka":
@@ -24,17 +24,24 @@ class TestBaseEP(object):
             cfg_kafka = cfg[cfg_tag]
             if not isinstance(cfg_kafka, dict):
                 raise TypeError("'{}' must be of type 'dict'".format(cfg_tag))
-            if "schema.registry" not in cfg_kafka:
-                raise RuntimeError("'schema.registry' NOT found in " +
-                        "'{}' dict".format(cfg_tag))
-            self.schema_reg = cfg_kafka["schema.registry"]
+            if False:
+                pass
+            else:
+                if "schema.registry" not in cfg_kafka:
+                    raise RuntimeError("'schema.registry' NOT found in " +
+                            "'{}' dict".format(cfg_tag))
+                self.schema_reg = cfg_kafka["schema.registry"]
 
-        if "brokers" not in cfg_kafka:
-            raise RuntimeError("'brokers' NOT found in " +
-                    "'{}' dict".format(cfg_tag))
-        if not isinstance(cfg_kafka["brokers"], str):
-            raise TypeError("'brokers' must be of type 'str'")
-        self.brokers = cfg_kafka["brokers"]
+        if False:
+            pass
+        else:
+            if "brokers" not in cfg_kafka:
+                raise RuntimeError("'brokers' NOT found in " +
+                        "'{}' dict".format(cfg_tag))
+            if not isinstance(cfg_kafka["brokers"], str):
+                raise TypeError("'brokers' must be of type 'str'")
+            self.brokers = cfg_kafka["brokers"]
+
         if "topic" not in cfg_kafka:
             raise RuntimeError("'topic' NOT found in " +
                     "'{}' dict".format(cfg_tag))
@@ -61,11 +68,11 @@ class TestProducer(TestBaseEP):
         if self.type == "Kafka":
             if "kafka" not in cfg_src:
                 raise RuntimeError("'kafka' NOT found in 'source' dict")
-            super(TestProducer, self).__init__(cfg_src)
+            super(TestProducer, self).__init__(tc_drv, cfg_src)
         elif self.type == "CFKafka":
             if "cfkafka" not in cfg_src:
                 raise RuntimeError("'cfkafka' NOT found in 'source' dict")
-            super(TestProducer, self).__init__(cfg_src)
+            super(TestProducer, self).__init__(tc_drv, cfg_src)
 
             if "schema.file" not in cfg_src["cfkafka"]:
                 raise RuntimeError("'schema.file' NOT found in 'cfkafka' dict")
@@ -150,7 +157,7 @@ class TestConsumer(TestBaseEP):
         if self.type == "Kafka":
             if "kafka" not in cfg_sink:
                 raise RuntimeError("'kafka' NOT found in 'sink' dict")
-            super(TestConsumer, self).__init__(cfg_sink)
+            super(TestConsumer, self).__init__(tc_drv, cfg_sink)
 
             if "group" not in cfg_sink["kafka"]:
                 raise RuntimeError("'group' NOT found in 'kafka' dict")
@@ -165,7 +172,7 @@ class TestConsumer(TestBaseEP):
         elif self.type == "CFKafka":
             if "cfkafka" not in cfg_sink:
                 raise RuntimeError("'cfkafka' NOT found in 'sink' dict")
-            super(TestConsumer, self).__init__(cfg_sink)
+            super(TestConsumer, self).__init__(tc_drv, cfg_sink)
 
             if "group" not in cfg_sink["cfkafka"]:
                 raise RuntimeError("'group' NOT found in 'cfkafka' dict")
