@@ -8,6 +8,28 @@ import os
 import json
 import logging
 
+class TestRest(object):
+    @staticmethod
+    def process_rest_headers(tag, rest):
+        try:
+            if isinstance(rest["headers"], str):
+                rest["headers"] = json.loads(rest["headers"])
+            elif not isinstance(rest["headers"], dict):
+                rest["headers"] = dict(rest["headers"])
+        except Exception as exc:
+            raise RuntimeError("Parsing '{}' > 'headers' failed: {}".format(
+                tag, exc))
+
+    @staticmethod
+    def process_rest_body(tag, rest):
+        try:
+            if ("Content-Type" in rest["headers"] and
+                    rest["headers"]["Content-Type"] == "application/json"):
+                rest["body"] = json.loads(rest["body"])
+        except Exception as exc:
+            pass
+
+
 class TestSerializer(object):
     def __init__(self, tc_drv, cfg_src_serial, cfg_sink_serial):
         logger = logging.getLogger()
@@ -66,9 +88,9 @@ class TestSerializer(object):
     def serialize(self, test_in):
         logger = logging.getLogger()
 
-        if not isinstance(test_in, str):
-            raise TypeError("'test_in' must be of type 'str'")
         if self.src["serialize"]:
+            if not isinstance(test_in, str):
+                raise TypeError("'test_in' must be of type 'str'")
             if self.src["type"] == "Avro":
                 py_obj = json.loads(test_in)
                 bytes_writer = io.BytesIO()
@@ -84,9 +106,9 @@ class TestSerializer(object):
     def deserialize(self, test_out, exp_out):
         logger = logging.getLogger()
 
-        if not isinstance(exp_out, str):
-            raise TypeError("'exp_out' must be of type 'str'")
         if self.sink["serialize"]:
+            if not isinstance(exp_out, str):
+                raise TypeError("'exp_out' must be of type 'str'")
             if not isinstance(test_out, bytes):
                 raise TypeError("'test_out' must be of type 'bytes'")
             if self.sink["type"] == "Avro":
@@ -104,6 +126,8 @@ class TestSerializer(object):
 
                 self.tc_drv.store_rx_one(test_out)
                 return test_out.decode("utf-8")
+        else:
+            self.tc_drv.store_exp_one(exp_out)
 
         return test_out
 

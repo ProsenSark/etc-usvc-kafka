@@ -4,6 +4,41 @@
 import json
 import logging
 
+class TestCompare(object):
+    @staticmethod
+    def compare_py_objs(rx_obj, exp_obj):
+        logger = logging.getLogger()
+
+        if isinstance(rx_obj, unicode):
+            rx_obj = rx_obj.encode()
+        if isinstance(exp_obj, unicode):
+            exp_obj = exp_obj.encode()
+
+        if not type(rx_obj) == type(exp_obj):
+            #logger.debug("{} vs. {}".format(type(rx_obj), type(exp_obj)))
+            return False
+
+        if isinstance(exp_obj, dict):
+            for key in exp_obj.keys():
+                if not key in rx_obj:
+                    return False
+                if not TestCompare.compare_py_objs(rx_obj[key], exp_obj[key]):
+                    return False
+        elif isinstance(exp_obj, list) or isinstance(exp_obj, tuple):
+            for exp_mbr in exp_obj:
+                found = False
+                for rx_mbr in rx_obj:
+                    if TestCompare.compare_py_objs(rx_mbr, exp_mbr):
+                        found = True
+                        break
+                if not found:
+                    return False
+        else:
+            return rx_obj == exp_obj
+
+        return True
+
+
 class TestCaseDriver(object):
     def __init__(self):
         self.tc_id = None
@@ -21,6 +56,7 @@ class TestCaseDriver(object):
         self.tc_id = tc_id
         self.num_plds = 0;
         self.rx_pld = None
+        self.exp_type = None
         self.exp_pld = None
         tc_list = self.results["testcases"]
         tc_list.append({})
@@ -55,6 +91,11 @@ class TestCaseDriver(object):
 
         self.rx_pld = rx_pld
 
+    def set_exp_type(self, exp_type):
+        logger = logging.getLogger()
+
+        self.exp_type = exp_type
+
     def store_exp_one(self, exp_pld):
         logger = logging.getLogger()
 
@@ -67,7 +108,7 @@ class TestCaseDriver(object):
             raise RuntimeError("No received payload stored!")
         if not self.exp_pld:
             raise RuntimeError("No expected payload stored!")
-        if self.rx_pld != self.exp_pld:
+        if not TestCompare.compare_py_objs(self.rx_pld, self.exp_pld):
             logger.debug("Expected payload:\n{}".format(
                 json.dumps(self.exp_pld, indent=2, sort_keys=True)))
             logger.debug("Received payload:\n{}".format(

@@ -3,9 +3,10 @@
 # -*- coding: utf-8 -*-
 
 from __future__ import print_function
-from tusvc_ms import TestProducer, TestConsumer
-from tusvc_serialization import TestSerializer
 from tusvc_driver import TestCaseDriver
+from tusvc_ms import TestProducer, TestConsumer
+from tusvc_serdes import TestSerializer
+from tusvc_payload import TestPayload
 import sys, os
 import getopt
 import yaml
@@ -129,45 +130,36 @@ def run_testcases(config):
             if not isinstance(pld, dict):
                 raise TypeError(err2_hdr + "Each payload must be of type 'dict'")
 
-            if "input" not in pld:
-                raise RuntimeError(err2_hdr + "'input' NOT found")
-            if not isinstance(pld["input"], str):
-                raise TypeError(err2_hdr + "'input' must be of type 'str'")
-            in_file = os.path.join(tc_id, pld["input"])
-
-            if "output" not in pld:
-                raise RuntimeError(err2_hdr + "'output' NOT found")
-            if not isinstance(pld["output"], str):
-                raise TypeError(err2_hdr + "'output' must be of type 'str'")
-            out_file = os.path.join(tc_id, pld["output"])
-
-            pld_id = "Sent {}, Expected {}".format(pld["input"], pld["output"])
+            pld_id = "PLD #{}".format(pld_num)
             log_hdr = "<{}: {}> ".format(tc_id, pld_id)
-            logger.debug("Loading input payload: '{}'".format(in_file))
-            logger.debug("Loading output payload: '{}'".format(out_file))
-            with open(in_file, "r") as in_fh, open(out_file, "r") as out_fh:
-                try:
-                    tc_sink.flush()
+            try:
+                tc_pld = TestPayload(tc_num, tc_id, pld, pld_num)
+                tx_pld = tc_pld.get_tx_pld(tc_src.get_type())
+                exp_pld = tc_pld.get_exp_pld(tc_src.get_type(), tc_sink.get_type())
 
-                    logger.debug(log_hdr + "Tx 1 msg")
-                    tc_src.tx_one(tc_serial.serialize(in_fh.read()))
+                pld_id = tc_pld.get_id(tc_src.get_type(), tc_sink.get_type())
+                log_hdr = "<{}: {}> ".format(tc_id, pld_id)
 
-                    logger.debug(log_hdr + "Rx 1 msg")
-                    exp_out = out_fh.read()
-                    tc_serial.deserialize(tc_sink.rx_one(exp_out), exp_out)
+                tc_sink.flush()
 
-                    logger.debug(log_hdr + "Validate 1 msg")
-                    if tc_drv.validate_one():
-                        logger.info("The result of testcase " + log_hdr + "is => PASSED")
-                        tc_drv.passed(pld_id)
-                    else:
-                        logger.error("The result of testcase " + log_hdr + "is => FAILED")
-                        tc_drv.failed(pld_id)
-                except Exception as exc:
-                    logger.error("Oops! {}".format(str(exc)))
+                logger.debug(log_hdr + "Tx 1 msg")
+                tc_src.tx_one(tc_serial.serialize(tx_pld))
+
+                logger.debug(log_hdr + "Rx 1 msg")
+                tc_serial.deserialize(tc_sink.rx_one(), exp_pld)
+
+                logger.debug(log_hdr + "Validate 1 msg")
+                if tc_drv.validate_one():
+                    logger.info("The result of testcase " + log_hdr + "is => PASSED")
+                    tc_drv.passed(pld_id)
+                else:
                     logger.error("The result of testcase " + log_hdr + "is => FAILED")
                     tc_drv.failed(pld_id)
-                    #raise
+            except Exception as exc:
+                logger.error("Oops! {}".format(str(exc)))
+                logger.error("The result of testcase " + log_hdr + "is => FAILED")
+                tc_drv.failed(pld_id)
+                #raise
 
     collect_report(tc_drv)
 

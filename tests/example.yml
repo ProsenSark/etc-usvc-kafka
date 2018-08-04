@@ -87,3 +87,178 @@ testcases:
       -
         input: "102.in"
         output: "102.out"
+  -
+    tcid: "TC_pets_rest1"
+    description: "Source: REST, Sink: None"
+    source:
+      type: "REST"
+      rest:
+        url.base: "http://localhost:8080"
+      serialize:
+        enable: False
+    sink:
+      type: "None"
+      serialize:
+        enable: False
+    payloads:
+      -
+        request:
+          method: "GET"
+          uri: "/pets/123"
+          headers: >
+            {
+              "Accept": "application/json"
+            }
+          body: null
+        response:
+          code: 404
+          headers: >
+            {
+              "Content-Length": "12",
+              "Content-Type": "application/json"
+            }
+          body: "Not found"
+      -
+        request:
+          method: "PUT"
+          uri: "/pets/123"
+          headers: >
+            {
+              "Accept": "application/json",
+              "Content-Type": "application/json"
+            }
+          body: >
+            {
+              "id": "123",
+              "animal_type": "cat",
+              "name": "Tigger",
+              "tags": {}
+            }
+        response:
+          code: 201
+          headers: >
+            {
+              "Content-Length": "0",
+              "Content-Type": "application/json"
+            }
+          body: ""
+      -
+        request:
+          method: "GET"
+          uri: "/pets/123"
+          headers: >
+            {
+              "Accept": "application/json"
+            }
+          body: null
+        response:
+          code: 200
+          headers: >
+            {
+              "Content-Type": "application/json"
+            }
+          body: >
+            {
+              "id": "123",
+              "animal_type": "cat",
+              "name": "Tigger",
+              "tags": {}
+            }
+      -
+        request:
+          method: "PUT"
+          uri: "/pets/123"
+          headers: >
+            {
+              "Accept": "application/json",
+              "Content-Type": "application/json"
+            }
+          body: >
+            {
+              "id": "123",
+              "animal_type": "cat",
+              "name": "Jasper",
+              "tags": {}
+            }
+        response:
+          code: 200
+          headers: >
+            {
+              "Content-Length": "0",
+              "Content-Type": "application/json"
+            }
+          body: ""
+      -
+        request:
+          method: "GET"
+          uri: "/pets/123"
+          headers: >
+            {
+              "Accept": "application/json"
+            }
+          body: null
+        response:
+          code: 200
+          headers: >
+            {
+              "Content-Type": "application/json"
+            }
+          body: >
+            {
+              "id": "123",
+              "animal_type": "cat",
+              "name": "Jasper",
+              "tags": {}
+            }
+      -
+        request:
+          method: "DELETE"
+          uri: "/pets/123"
+          headers: >
+            {
+              "Accept": "application/json"
+            }
+          body: null
+        response:
+          code: 204
+          headers: >
+            {
+              "Content-Length": "0",
+              "Content-Type": "application/json"
+            }
+          body: ""
+      -
+        request:
+          method: "DELETE"
+          uri: "/pets/123"
+          headers: >
+            {
+              "Accept": "application/json"
+            }
+          body: null
+        response:
+          code: 404
+          headers: >
+            {
+              "Content-Length": "0",
+              "Content-Type": "application/json"
+            }
+          body: ""
+      -
+        request:
+          method: "GET"
+          uri: "/pets/123"
+          headers: >
+            {
+              "Accept": "application/json"
+            }
+          body: null
+        response:
+          code: 404
+          headers: >
+            {
+              "Content-Length": "12",
+              "Content-Type": "application/json"
+            }
+          body: "Not found"
+

@@ -1,11 +1,13 @@
 # vim: set fileencoding=utf-8 :
 # -*- coding: utf-8 -*-
 
+from tusvc_serdes import TestRest
 from confluent_kafka import Producer, Consumer
 from confluent_kafka import KafkaError
 from confluent_kafka import TopicPartition
 from confluent_kafka import avro
 from confluent_kafka.avro.serializer import SerializerError
+import requests
 import os
 import json
 import logging
@@ -14,6 +16,10 @@ class TestBaseEP(object):
     def __init__(self, tc_drv, cfg):
         if not cfg:
             raise ValueError("'cfg' is a required parameter")
+
+        if self.type == "None" or self.type == "REST":
+            return
+
         if self.type == "Kafka":
             cfg_tag = "kafka"
             cfg_kafka = cfg[cfg_tag]
@@ -52,6 +58,10 @@ class TestBaseEP(object):
     def __del__(self):
         pass
 
+    def get_type(self):
+        return self.type
+
+
 class TestProducer(TestBaseEP):
     def __init__(self, tc_drv, cfg_src):
         logger = logging.getLogger()
@@ -65,6 +75,9 @@ class TestProducer(TestBaseEP):
         self.type = cfg_src["type"]
         self.prod = None
 
+        if self.type == "None":
+            return
+
         if self.type == "Kafka":
             if "kafka" not in cfg_src:
                 raise RuntimeError("'kafka' NOT found in 'source' dict")
@@ -77,6 +90,16 @@ class TestProducer(TestBaseEP):
             if "schema.file" not in cfg_src["cfkafka"]:
                 raise RuntimeError("'schema.file' NOT found in 'cfkafka' dict")
             self.schema_file = cfg_src["cfkafka"]["schema.file"]
+        elif self.type == "REST":
+            if "rest" not in cfg_src:
+                raise RuntimeError("'rest' NOT found in 'source' dict")
+            super(TestProducer, self).__init__(tc_drv, cfg_src)
+
+            if "url.base" not in cfg_src["rest"]:
+                raise RuntimeError("'url.base' NOT found in 'rest' dict")
+            self.url_base = cfg_src["rest"]["url.base"]
+
+            self.tc_drv.set_exp_type(self.type)
         else:
             raise RuntimeError("Unsupported 'type'='%s' in 'source' dict" %
                     (cfg_src["type"]))
@@ -85,10 +108,16 @@ class TestProducer(TestBaseEP):
             self.connect()
 
     def __del__(self):
-        self.prod.flush()
+        logger = logging.getLogger()
+
+        if self.prod:
+            self.prod.flush()
 
     def connect(self):
         logger = logging.getLogger()
+
+        if self.type == "None":
+            return
 
         if self.type == "Kafka":
             logger.debug("brokers: {}, topic: {}".format(
@@ -115,9 +144,15 @@ class TestProducer(TestBaseEP):
                     #'auto.offset.reset': 'smallest',
                 }
             }, default_value_schema=val_schema)
+        elif self.type == "REST":
+            logger.debug("url_base: {}".format(
+                self.url_base))
 
     def tx_one(self, test_in):
         logger = logging.getLogger()
+
+        if self.type == "None":
+            return
 
         if self.type == "Kafka":
             if not isinstance(test_in, bytes):
@@ -136,9 +171,40 @@ class TestProducer(TestBaseEP):
             #logger.debug("going to produce")
             self.prod.produce(topic=self.topic, value=val_obj)
             logger.debug("TX'ed '{}' : '{}'".format(type(val_obj), val_obj))
+        elif self.type == "REST":
+            if not isinstance(test_in, dict):
+                raise TypeError("'test_in' must be of type 'dict'")
 
-        #logger.debug("going to flush")
-        self.prod.flush()
+            try:
+                method = test_in["method"]
+                url = self.url_base + test_in["uri"]
+                headers = test_in["headers"]
+                body = test_in["body"]
+                if body:
+                    body = json.dumps(body)
+                rsp_timeout = 10
+                rsp = requests.request(method, url,
+                        data=body, headers=headers,
+                        timeout=rsp_timeout, verify=False)
+                logger.debug("REQ '{}'".format(test_in))
+                test_out = {
+                    "code": rsp.status_code,
+                    "headers": rsp.headers,
+                    "body": rsp.text
+                }
+                TestRest.process_rest_headers("response", test_out)
+                TestRest.process_rest_body("response", test_out)
+                logger.debug("RSP '{}'".format(test_out))
+                self.tc_drv.store_rx_one(test_out)
+            except (requests.HTTPError, requests.Timeout,
+                    requests.ConnectionError) as exc:
+                raise RuntimeError("REST request failed: {}".format(
+                    exc))
+
+        if self.prod:
+            #logger.debug("going to flush")
+            self.prod.flush()
+
 
 class TestConsumer(TestBaseEP):
     def __init__(self, tc_drv, cfg_sink):
@@ -153,6 +219,9 @@ class TestConsumer(TestBaseEP):
         self.type = cfg_sink["type"]
         self.poll_count = 10
         self.cons = None
+
+        if self.type == "None":
+            return
 
         if self.type == "Kafka":
             if "kafka" not in cfg_sink:
@@ -169,6 +238,8 @@ class TestConsumer(TestBaseEP):
                 if not isinstance(cfg_sink["kafka"]["timeout"], int):
                     raise TypeError("'timeout' must be of type 'int'")
                 self.poll_count = cfg_sink["kafka"]["timeout"]
+
+            self.tc_drv.set_exp_type(self.type)
         elif self.type == "CFKafka":
             if "cfkafka" not in cfg_sink:
                 raise RuntimeError("'cfkafka' NOT found in 'sink' dict")
@@ -184,6 +255,8 @@ class TestConsumer(TestBaseEP):
                 if not isinstance(cfg_sink["cfkafka"]["timeout"], int):
                     raise TypeError("'timeout' must be of type 'int'")
             self.poll_count = cfg_sink["cfkafka"]["timeout"]
+
+            self.tc_drv.set_exp_type(self.type)
         else:
             raise RuntimeError("Unsupported 'type'='%s' in 'sink' dict" %
                     (cfg_sink["type"]))
@@ -200,6 +273,9 @@ class TestConsumer(TestBaseEP):
 
     def connect(self):
         logger = logging.getLogger()
+
+        if self.type == "None":
+            return
 
         if self.type == "Kafka":
             logger.debug("brokers: {}, group: {}, topic: {}".format(
@@ -230,6 +306,9 @@ class TestConsumer(TestBaseEP):
     def __reset_pos(self):
         logger = logging.getLogger()
 
+        if self.type == "None":
+            return
+
         parts = [TopicPartition(self.topic, 0)]
         (start, end) = self.cons.get_watermark_offsets(parts[0])
         logger.debug("Currently at {}/{} offset <{}, {}>".format(parts[0].topic,
@@ -240,6 +319,9 @@ class TestConsumer(TestBaseEP):
 
     def flush(self):
         logger = logging.getLogger()
+
+        if self.type == "None":
+            return
 
         logger.debug("topic: {}".format(self.topic))
         while True:
@@ -253,8 +335,11 @@ class TestConsumer(TestBaseEP):
             elif msg.error().code() == KafkaError._PARTITION_EOF:
                 break
 
-    def rx_one(self, exp_out):
+    def rx_one(self):
         logger = logging.getLogger()
+
+        if self.type == "None":
+            return None
 
         logger.warning("will timeout in {} secs".format(self.poll_count))
         #logger.debug("going to consume/poll")
@@ -294,10 +379,6 @@ class TestConsumer(TestBaseEP):
         logger.debug("RX'ed '{}' : '{}'".format(type(test_out), test_out))
         if self.type == "CFKafka":
             self.tc_drv.store_rx_one(test_out)
-            if not isinstance(exp_out, str):
-                raise TypeError("'exp_out' must be of type 'str'")
-            val_obj = json.loads(exp_out)
-            self.tc_drv.store_exp_one(val_obj)
 
         return test_out
 
