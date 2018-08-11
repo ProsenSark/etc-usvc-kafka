@@ -323,16 +323,21 @@ class TestConsumer(TestBaseEP):
         if self.type == "None":
             return
 
-        logger.debug("topic: {}".format(self.topic))
+        poll_count = 60
+        logger.warning("topic: {}, will timeout in {} secs".format(
+            self.topic, poll_count))
+        poll_num = 0
         while True:
             try:
+                poll_num += 1
                 msg = self.cons.poll(timeout=1.0)
             except SerializerError as exc:
                 continue
 
-            if msg is None or not msg.error():
-                continue
-            elif msg.error().code() == KafkaError._PARTITION_EOF:
+            if msg is None:
+                if poll_num >= poll_count:
+                    break
+            elif msg.error():
                 break
 
     def rx_one(self):

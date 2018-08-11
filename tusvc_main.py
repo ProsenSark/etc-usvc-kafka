@@ -62,7 +62,7 @@ def collect_report(tc_drv):
         print(" {} ".format(tc["tcid"]))
         for pld in tc["payloads"]:
             for key, val in pld.items():
-                print("     {:<60s}  {:>10s} ".format(key, val))
+                print("     {:<60s}  {:>10s} ".format(key, val["result"]))
 
     hdr2 = ("+------------------------------------------------------------------------------+\n" +
             "|                             Task Result Summary                              |\n" +
@@ -134,11 +134,13 @@ def run_testcases(config):
             log_hdr = "<{}: {}> ".format(tc_id, pld_id)
             try:
                 tc_pld = TestPayload(tc_num, tc_id, pld, pld_num)
+                pld_id = tc_pld.get_id(tc_src.get_type(), tc_sink.get_type())
+                pld_type = tc_pld.get_type()
+                tc_drv.add_payload(pld_id, pld_type)
+                log_hdr = "<{}: {}> ".format(tc_id, pld_id)
+
                 tx_pld = tc_pld.get_tx_pld(tc_src.get_type())
                 exp_pld = tc_pld.get_exp_pld(tc_src.get_type(), tc_sink.get_type())
-
-                pld_id = tc_pld.get_id(tc_src.get_type(), tc_sink.get_type())
-                log_hdr = "<{}: {}> ".format(tc_id, pld_id)
 
                 tc_sink.flush()
 
@@ -150,16 +152,21 @@ def run_testcases(config):
 
                 logger.debug(log_hdr + "Validate 1 msg")
                 if tc_drv.validate_one():
-                    logger.info("The result of testcase " + log_hdr + "is => PASSED")
                     tc_drv.passed(pld_id)
                 else:
-                    logger.error("The result of testcase " + log_hdr + "is => FAILED")
                     tc_drv.failed(pld_id)
             except Exception as exc:
                 logger.error("Oops! {}".format(str(exc)))
-                logger.error("The result of testcase " + log_hdr + "is => FAILED")
                 tc_drv.failed(pld_id)
                 #raise
+
+            pld_result = tc_drv.result(pld_id)
+            if pld_result == "PASSED":
+                logger.info("The result of testcase {} is => {}".format(
+                    log_hdr, pld_result))
+            elif pld_result == "FAILED":
+                logger.error("The result of testcase {} is => {}".format(
+                    log_hdr, pld_result))
 
     collect_report(tc_drv)
 

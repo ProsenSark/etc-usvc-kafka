@@ -64,21 +64,38 @@ class TestCaseDriver(object):
         tc_list[self.num_tcs-1]["tcid"] = self.tc_id
         tc_list[self.num_tcs-1]["payloads"] = []
 
-    def passed(self, pld_id):
+    def add_payload(self, pld_id, pld_type):
         tc_list = self.results["testcases"]
         pld_list = tc_list[self.num_tcs-1]["payloads"]
         pld_list.append({})
         self.num_plds += 1
-        pld_list[self.num_plds-1][pld_id] = "PASSED"
-        self.results["num_oks"] += 1
+        pld_list[self.num_plds-1][pld_id] = {}
+        pld_list[self.num_plds-1][pld_id]["type"] = pld_type
+
+    def passed(self, pld_id):
+        tc_list = self.results["testcases"]
+        pld_list = tc_list[self.num_tcs-1]["payloads"]
+        if pld_list[self.num_plds-1][pld_id]["type"] == "NEG":
+            pld_list[self.num_plds-1][pld_id]["result"] = "FAILED"
+            self.results["num_noks"] += 1
+        else:
+            pld_list[self.num_plds-1][pld_id]["result"] = "PASSED"
+            self.results["num_oks"] += 1
 
     def failed(self, pld_id):
         tc_list = self.results["testcases"]
         pld_list = tc_list[self.num_tcs-1]["payloads"]
-        pld_list.append({})
-        self.num_plds += 1
-        pld_list[self.num_plds-1][pld_id] = "FAILED"
-        self.results["num_noks"] += 1
+        if pld_list[self.num_plds-1][pld_id]["type"] == "NEG":
+            pld_list[self.num_plds-1][pld_id]["result"] = "PASSED"
+            self.results["num_oks"] += 1
+        else:
+            pld_list[self.num_plds-1][pld_id]["result"] = "FAILED"
+            self.results["num_noks"] += 1
+
+    def result(self, pld_id):
+        tc_list = self.results["testcases"]
+        pld_list = tc_list[self.num_tcs-1]["payloads"]
+        return pld_list[self.num_plds-1][pld_id]["result"]
 
     def get_id(self):
         return self.tc_id

@@ -13,6 +13,22 @@ class TestPayload(object):
         self.pld_num = pld_num
         self.pld = pld
 
+        err_hdr = self.__get_err_hdr()
+        if "verify" in self.pld:
+            if not isinstance(self.pld["verify"], str):
+                raise TypeError(err_hdr + "'verify' must be of type 'str'")
+            pld_verify = self.pld["verify"]
+            if pld_verify == "POS":
+                pass
+            elif pld_verify == "NEG":
+                pass
+            else:
+                raise RuntimeError(err_hdr + "Unsupported 'verify'='%s'" %
+                        (pld_verify))
+            self.pld_type = pld_verify
+        else:
+            self.pld_type = "POS"
+
     def __del__(self):
         pass
 
@@ -34,6 +50,9 @@ class TestPayload(object):
             raise RuntimeError(err_hdr + "'body' NOT found in '{}'".format(
                 pld_tag))
         TestRest.process_rest_body(pld_tag, self.pld[pld_tag])
+
+    def get_type(self):
+        return self.pld_type
 
     def get_tx_pld(self, tx_type):
         logger = logging.getLogger()
@@ -86,14 +105,14 @@ class TestPayload(object):
 
     def get_id(self, tx_type, rx_type):
         if tx_type == "None":
-            return "PLD #{}".format(self.pld_num)
+            return "{}: PLD #{}".format(self.pld_type, self.pld_num)
         elif tx_type == "REST":
             req = self.pld["request"]
-            return "REST REQ #{}: {} {}".format(self.pld_num,
-                    req["method"], req["uri"])
+            return "{}: REST REQ #{}: {} {}".format(self.pld_type,
+                    self.pld_num, req["method"], req["uri"])
         elif rx_type == "None":
-            return "PLD #{}".format(self.pld_num)
+            return "{}: PLD #{}".format(self.pld_type, self.pld_num)
         else:
-            return "Sent {}, Expected {}".format(
+            return "{}: Sent {}, Expected {}".format(self.pld_type,
                     self.pld["input"], self.pld["output"])
 

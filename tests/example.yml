@@ -21,6 +21,10 @@ testcases:
         type: "Binary"
     payloads:
       -
+        input: "201.in"
+        output: "201.out"
+        verify: "NEG"
+      -
         input: "101.in"
         output: "101.out"
       -
@@ -56,6 +60,10 @@ testcases:
         input: "101.in"
         output: "101.out"
       -
+        input: "201.in"
+        output: "201.out"
+        verify: "NEG"
+      -
         input: "102.in"
         output: "102.out"
   -
@@ -87,6 +95,10 @@ testcases:
       -
         input: "102.in"
         output: "102.out"
+      -
+        input: "201.in"
+        output: "201.out"
+        verify: "NEG"
   -
     tcid: "TC_pets_rest1"
     description: "Source: REST, Sink: None"
