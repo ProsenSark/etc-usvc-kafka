@@ -317,7 +317,7 @@ class TestConsumer(TestBaseEP):
             parts[0].offset = end - 1
             self.cons.seek(parts[0])
 
-    def flush(self):
+    def drain(self):
         logger = logging.getLogger()
 
         if self.type == "None":

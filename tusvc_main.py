@@ -142,7 +142,7 @@ def run_testcases(config):
                 tx_pld = tc_pld.get_tx_pld(tc_src.get_type())
                 exp_pld = tc_pld.get_exp_pld(tc_src.get_type(), tc_sink.get_type())
 
-                tc_sink.flush()
+                tc_sink.drain()
 
                 logger.debug(log_hdr + "Tx 1 msg")
                 tc_src.tx_one(tc_serial.serialize(tx_pld))
