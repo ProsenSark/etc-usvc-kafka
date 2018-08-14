@@ -117,6 +117,18 @@ def run_testcases(config):
         tc_sink_serial_cfg = tc_sink_cfg["serialize"]
         tc_serial = TestSerializer(tc_drv, tc_src_serial_cfg, tc_sink_serial_cfg)
 
+        if tc_src.is_foreign():
+            log_hdr = "<{}> ".format(tc_id)
+            try:
+                logger.debug(log_hdr + "Run foreign tests")
+                foreign_op = tc_src.run_foreign_tests()
+                if foreign_op:
+                    print(foreign_op)
+            except Exception as exc:
+                logger.error("Oops! {}".format(str(exc)))
+                #raise
+            continue
+
         if "payloads" not in tc:
             raise RuntimeError(err_hdr + "'payloads' NOT found")
         if not isinstance(tc["payloads"], list):

@@ -273,4 +273,19 @@ testcases:
               "Content-Type": "application/json"
             }
           body: "Not found"
+  -
+    tcid: "TC_pets_rest2"
+    description: "Foreign Source: REST, Sink: None"
+    source:
+      foreign: True
+      type: "REST"
+      rest:
+        url.base: "http://localhost:8080"
+        import: "pets_eg_v2.yml"
+      serialize:
+        enable: False
+    sink:
+      type: "None"
+      serialize:
+        enable: False
 

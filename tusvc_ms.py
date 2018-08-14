@@ -9,6 +9,7 @@ from confluent_kafka import avro
 from confluent_kafka.avro.serializer import SerializerError
 import requests
 import os
+import subprocess
 import json
 import logging
 
@@ -72,11 +73,22 @@ class TestProducer(TestBaseEP):
             raise RuntimeError("'type' NOT found in 'source' dict")
         self.tc_drv = tc_drv
         self.tc_id = tc_drv.get_id()
+        self.foreign = False
         self.type = cfg_src["type"]
         self.prod = None
 
         if self.type == "None":
             return
+
+        if "foreign" in cfg_src:
+            if not isinstance(cfg_src["foreign"], bool):
+                raise TypeError("'foreign' must be of type 'bool'")
+            self.foreign = cfg_src["foreign"]
+            if self.type == "REST":
+                pass
+            else:
+                raise RuntimeError("Unsupported foreign 'type'='%s' in 'source' dict" %
+                        (cfg_src["type"]))
 
         if self.type == "Kafka":
             if "kafka" not in cfg_src:
@@ -97,9 +109,14 @@ class TestProducer(TestBaseEP):
 
             if "url.base" not in cfg_src["rest"]:
                 raise RuntimeError("'url.base' NOT found in 'rest' dict")
-            self.url_base = cfg_src["rest"]["url.base"]
+            self.rest_url_base = cfg_src["rest"]["url.base"]
 
             self.tc_drv.set_exp_type(self.type)
+
+            if self.foreign:
+                if "import" not in cfg_src["rest"]:
+                    raise RuntimeError("'import' NOT found in 'rest' dict")
+                self.rest_import = cfg_src["rest"]["import"]
         else:
             raise RuntimeError("Unsupported 'type'='%s' in 'source' dict" %
                     (cfg_src["type"]))
@@ -112,6 +129,9 @@ class TestProducer(TestBaseEP):
 
         if self.prod:
             self.prod.flush()
+
+    def is_foreign(self):
+        return self.foreign
 
     def connect(self):
         logger = logging.getLogger()
@@ -145,8 +165,8 @@ class TestProducer(TestBaseEP):
                 }
             }, default_value_schema=val_schema)
         elif self.type == "REST":
-            logger.debug("url_base: {}".format(
-                self.url_base))
+            logger.debug("rest_url_base: {}".format(
+                self.rest_url_base))
 
     def tx_one(self, test_in):
         logger = logging.getLogger()
@@ -177,7 +197,7 @@ class TestProducer(TestBaseEP):
 
             try:
                 method = test_in["method"]
-                url = self.url_base + test_in["uri"]
+                url = self.rest_url_base + test_in["uri"]
                 headers = test_in["headers"]
                 body = test_in["body"]
                 if body:
@@ -204,6 +224,23 @@ class TestProducer(TestBaseEP):
         if self.prod:
             #logger.debug("going to flush")
             self.prod.flush()
+
+    def run_foreign_tests(self):
+        logger = logging.getLogger()
+
+        if not self.foreign:
+            return None
+
+        if self.type == "REST":
+            cmd_str = "pyresttest {} {} --log={} --verbose".format(
+                    self.rest_url_base, self.rest_import,
+                    logging.getLevelName(logger.getEffectiveLevel()))
+            logger.warning(cmd_str)
+            sproc = subprocess.Popen(cmd_str, shell=True,
+                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            rsp, _ = sproc.communicate()
+            return rsp
+        return None
 
 
 class TestConsumer(TestBaseEP):
