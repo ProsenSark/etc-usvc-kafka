@@ -422,5 +422,7 @@ class TestConsumer(TestBaseEP):
         if self.type == "CFKafka":
             self.tc_drv.store_rx_one(test_out)
 
+        self.cons.commit()
+
         return test_out
 
