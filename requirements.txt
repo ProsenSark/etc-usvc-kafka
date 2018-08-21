@@ -1,6 +1,6 @@
 confluent-kafka==0.11.4
 confluent-kafka[avro]
-avro
+six
 PyYAML
 requests
 pyresttest

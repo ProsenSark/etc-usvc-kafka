@@ -1,6 +1,7 @@
 # vim: set fileencoding=utf-8 :
 # -*- coding: utf-8 -*-
 
+import six
 import json
 import logging
 
@@ -9,9 +10,13 @@ class TestCompare(object):
     def compare_py_objs(rx_obj, exp_obj):
         logger = logging.getLogger()
 
-        if isinstance(rx_obj, unicode):
+        if six.PY2 and isinstance(rx_obj, unicode):
             rx_obj = rx_obj.encode()
-        if isinstance(exp_obj, unicode):
+        elif six.PY3 and isinstance(rx_obj, str):
+            rx_obj = rx_obj.encode()
+        if six.PY2 and isinstance(exp_obj, unicode):
+            exp_obj = exp_obj.encode()
+        elif six.PY3 and isinstance(exp_obj, str):
             exp_obj = exp_obj.encode()
 
         if not type(rx_obj) == type(exp_obj):
@@ -19,7 +24,7 @@ class TestCompare(object):
             return False
 
         if isinstance(exp_obj, dict):
-            for key in exp_obj.keys():
+            for key in list(exp_obj.keys()):
                 if not key in rx_obj:
                     return False
                 if not TestCompare.compare_py_objs(rx_obj[key], exp_obj[key]):

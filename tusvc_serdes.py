@@ -1,6 +1,7 @@
 # vim: set fileencoding=utf-8 :
 # -*- coding: utf-8 -*-
 
+import six
 import avro.schema
 import avro.io
 import io
@@ -40,17 +41,27 @@ class TestSerializer(object):
         self.sink = {}
         self.__init_common(cfg_src_serial, self.src)
         self.__init_common(cfg_sink_serial, self.sink)
+        if six.PY3:
+            f_rmode = "r"
+        else:
+            f_rmode = "rb"
         if self.src["serialize"] and self.src["type"] == "Avro":
             src_file = os.path.join(self.tc_id, self.src["avro_schema"])
             logger.debug("Loading source Avro: '{}'".format(src_file))
-            with open(src_file, "rb") as src_fh:
-                schema = avro.schema.parse(src_fh.read())
+            with open(src_file, f_rmode) as src_fh:
+                if six.PY3:
+                    schema = avro.schema.Parse(src_fh.read())
+                else:
+                    schema = avro.schema.parse(src_fh.read())
                 self.src["avro_writer"] = avro.io.DatumWriter(schema)
         if self.sink["serialize"] and self.sink["type"] == "Avro":
             sink_file = os.path.join(self.tc_id, self.sink["avro_schema"])
             logger.debug("Loading sink Avro: '{}'".format(sink_file))
-            with open(sink_file, "rb") as sink_fh:
-                schema = avro.schema.parse(sink_fh.read())
+            with open(sink_file, f_rmode) as sink_fh:
+                if six.PY3:
+                    schema = avro.schema.Parse(sink_fh.read())
+                else:
+                    schema = avro.schema.parse(sink_fh.read())
                 self.sink["avro_reader"] = avro.io.DatumReader(schema)
 
     def __init_common(self, cfg_serial, ep):

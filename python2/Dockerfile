@@ -1,8 +1,12 @@
 #FROM python:2
 FROM python:2.7-alpine3.8
 
-WORKDIR /root
 COPY requirements.txt /root
+COPY reqs2.txt /root
+COPY *.py /root/
+ADD tests /root/tests
+
+WORKDIR /root
 
 RUN set -ex; \
     #apt-get update; \
@@ -14,12 +18,10 @@ RUN set -ex; \
     apk add --no-cache python2-dev; \
     pip2 install --upgrade pip; \
     pip2 install --no-cache-dir -r requirements.txt; \
+    pip2 install --no-cache-dir -r reqs2.txt; \
     apk del python2-dev; \
     apk del musl-dev gcc librdkafka-dev curl-dev; \
     echo -e "All dependencies installed ..."
-
-COPY *.py /root/
-ADD tests /root/tests
 
 #ENV PYTHONPATH "${PYTHONPATH}:/root/packages"
 

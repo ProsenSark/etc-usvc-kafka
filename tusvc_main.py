@@ -61,7 +61,7 @@ def collect_report(tc_drv):
     for tc in results["testcases"]:
         print(" {} ".format(tc["tcid"]))
         for pld in tc["payloads"]:
-            for key, val in pld.items():
+            for key, val in list(pld.items()):
                 print("     {:<60s}  {:>10s} ".format(key, val["result"]))
 
     hdr2 = ("+------------------------------------------------------------------------------+\n" +

@@ -239,7 +239,7 @@ class TestProducer(TestBaseEP):
             sproc = subprocess.Popen(cmd_str, shell=True,
                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             rsp, _ = sproc.communicate()
-            return rsp
+            return rsp.decode()
         return None
 
 
