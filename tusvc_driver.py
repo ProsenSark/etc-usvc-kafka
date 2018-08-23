@@ -20,12 +20,15 @@ class TestCompare(object):
             exp_obj = exp_obj.encode()
 
         if not type(rx_obj) == type(exp_obj):
-            #logger.debug("{} vs. {}".format(type(rx_obj), type(exp_obj)))
+            logger.error("Rx '{}' != Exp '{}'".format(
+                type(rx_obj), type(exp_obj)))
             return False
 
         if isinstance(exp_obj, dict):
             for key in list(exp_obj.keys()):
                 if not key in rx_obj:
+                    logger.error("Exp dict key '{}' NOT found in Rx dict".format(
+                        key))
                     return False
                 if not TestCompare.compare_py_objs(rx_obj[key], exp_obj[key]):
                     return False
@@ -37,9 +40,13 @@ class TestCompare(object):
                         found = True
                         break
                 if not found:
+                    logger.debug("Rx list/tuple != Exp list/tuple")
                     return False
         else:
-            return rx_obj == exp_obj
+            if not rx_obj == exp_obj:
+                logger.error("Rx '{}' != Exp '{}'".format(
+                    rx_obj, exp_obj))
+                return False
 
         return True
 
