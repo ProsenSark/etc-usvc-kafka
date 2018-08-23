@@ -32,18 +32,20 @@ def load_yaml(yaml_file):
     """Load YAML file"""
     logger = logging.getLogger()
 
+    data = None
     logger.debug("Loading YAML file '%s' ..." % yaml_file)
 
     try:
         with open(yaml_file, 'r') as fh:
             data = yaml.safe_load(fh)
-    except yaml.YAMLError as e:
-        if hasattr(e, 'problem_mark'):
-            mark = e.problem_mark
+    except yaml.YAMLError as exc:
+        if hasattr(exc, 'problem_mark'):
+            mark = exc.problem_mark
             logger.error("Not able to load YAML file '%s', error position: (%s:%s)"
                     % (yaml_file, mark.line+1, mark.column+1))
-    except:
-        logger.error("Not able to load YAML file '%s'" % yaml_file)
+    except Exception as exc:
+        logger.error("{}".format(str(exc)))
+        return None
 
     # check there is information in the YAML file
     if not data:
@@ -226,7 +228,7 @@ def main():
     #pp = pprint.PrettyPrinter(indent=4)
     #pp.pprint(config)
     if not config:
-        logger.error("Oops! Empty YAML config '%s'" % (yaml_cfg))
+        logger.error("Oops! Failed to load YAML config '%s'" % (yaml_cfg))
         return
 
     try:
